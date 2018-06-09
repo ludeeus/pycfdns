@@ -1,3 +1,5 @@
+# Archived: Moved to GitLab https://gitlab.com/ludeeus/pycfdns
+
 # A module for updating Cloudflare DNS records.
 
 #### Notes

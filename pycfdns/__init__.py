@@ -61,6 +61,9 @@ class CloudflareUpdater:
         external_ip = await self.api.get_external_ip()
         success, error = [], []
 
+        if external_ip is None:
+            _LOGGER.error("No external IP, skipping update")
+
         for record in records:
             if record.record_content == external_ip:
                 continue

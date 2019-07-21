@@ -1,98 +1,88 @@
-"""
-Python module updating Cloudflare DNS records
-This code is released under the terms of the MIT license. See the LICENSE
-file for more details.
-"""
+"""Update Cloudflare DNS A-records."""
+# pylint: disable=broad-except
 import json
-import requests
+import logging
+from pycfdns.models import CFAPI, CFAuth, CFRecord
+from pycfdns.const import BASE_URL
+
+_LOGGER = logging.getLogger("pycfdns")
+
 
 class CloudflareUpdater:
     """This class is used to update Cloudflare DNS records."""
-    BASE_URL = 'https://api.cloudflare.com/client/v4/zones'
-    GET_EXT_IP_URL = 'https://api.ipify.org'
 
-    def __init__(self):
+    def __init__(self, session, loop, email, token, zone, records=None):
         """Initialize"""
+        self.api = CFAPI(session, loop, CFAuth(email, token))
+        self.zone = zone
+        self.records = records
 
-    def set_header(self, email, key):
-        """Set header data to be used in API calls."""
-        headers = {
-        'X-Auth-Email': email,
-        'X-Auth-Key': key,
-        'Content-Type': 'application/json'
-        }
-        return headers
-
-    def get_zoneID(self, headers, zone):
+    async def get_zone_id(self):
         """Get the zone id for the zone."""
-        zoneIDurl = self.BASE_URL + '?name=' + zone
-        zoneIDrequest = requests.get(zoneIDurl, headers=headers)
-        zoneID = zoneIDrequest.json()['result'][0]['id']
-        return zoneID
+        zone_id = None
+        endpoint = "?name={}".format(self.zone)
+        url = BASE_URL.format(endpoint)
+        data = await self.api.get_json(url)
+        try:
+            zone_id = data["result"][0]["id"]
+        except Exception:
+            pass
+        return zone_id
 
-    def get_recordInfo(self, headers, zoneID, zone, records):
+    async def get_record_info(self, zone_id):
         """Get the information of the records."""
-        if 'None' in records: #If ['None'] in record argument, query all.
-            recordQueryEnpoint = '/' + zoneID + '/dns_records&per_page=100'
-            recordUrl = self.BASE_URL + recordQueryEnpoint
-            recordRequest = requests.get(recordUrl, headers=headers)
-            recordResponse = recordRequest.json()['result']
-            dev = []
-            num = 0
-            for value in recordResponse:
-                recordName = recordResponse[num]['name']
-                dev.append(recordName)
-                num = num + 1
-            records = dev
-        updateRecords = []
-        for record in records:
-            if zone in record:
-                recordFullname = record
-            else:
-                recordFullname = record + '.' + zone
-            recordQuery = '/' + zoneID + '/dns_records?name=' + recordFullname
-            recordUrl = self.BASE_URL + recordQuery
-            recordInfoRequest = requests.get(recordUrl, headers=headers)
-            recordInfoResponse = recordInfoRequest.json()['result'][0]
-            recordID = recordInfoResponse['id']
-            recordType = recordInfoResponse['type']
-            recordProxy = str(recordInfoResponse['proxied'])
-            recordContent = recordInfoResponse['content']
-            if recordProxy == 'True':
-                recordProxied = True
-            else:
-                recordProxied = False
-            updateRecords.append([recordID, recordFullname, recordType,
-                recordContent, recordProxied])
-        return updateRecords
+        record_information = []
+        if self.records is None:
+            self.records = []
+            endpoint = "{}/dns_records&per_page=100".format(zone_id)
+            url = BASE_URL.format(endpoint)
+            data = await self.api.get_json(url)
+            data = data["result"]
 
-    def update_records(self, headers, zoneID, updateRecords):
+            if data is None:
+                _LOGGER.error("No records found for %s", zone_id)
+                return record_information
+
+            for record in data:
+                self.records.append(record["name"])
+
+        for record in self.records:
+            if self.zone not in record:
+                record = "{}.{}".format(record, self.zone)
+
+            endpoint = "{}/dns_records?name={}".format(zone_id, record)
+            url = BASE_URL.format(endpoint)
+            data = await self.api.get_json(url)
+            record_information.append(CFRecord(data["result"][0]))
+        return record_information
+
+    async def update_records(self, zone_id, records):
         """Update DNS records."""
-        IP = requests.get(self.GET_EXT_IP_URL).text
-        message = True
-        errorsRecords = []
-        sucessRecords = []
-        for record in updateRecords:
-            updateEndpoint = '/' + zoneID + '/dns_records/' + record[0]
-            updateUrl = self.BASE_URL + updateEndpoint
-            data = json.dumps({
-                'id': zoneID,
-                'type': record[2],
-                'name': record[1],
-                'content': IP,
-                'proxied': record[4]
-                })
-            if record[3] != IP and record[2] == 'A':
-                result = requests.put(updateUrl,
-                    headers=headers, data=data).json()
-                if result['success'] == True:
-                    sucessRecords.append(record[1])
-                else:
-                    errorsRecords.append(record[1])
-                if errorsRecords != []:
-                    message = ("There was an error updating these records: "
-                        + str(errorsRecords) + " , the rest is OK.")
-                else:
-                    message = ("These records got updated: "
-                        + str(sucessRecords))
-        return message
+        external_ip = await self.api.get_external_ip()
+        success, error = [], []
+
+        for record in records:
+            if record.record_content == external_ip:
+                continue
+            elif record.record_type != "A":
+                continue
+            endpoint = "{}/dns_records/{}".format(zone_id, record.record_id)
+            url = BASE_URL.format(endpoint)
+            data = {
+                "type": record.record_type,
+                "name": record.record_name,
+                "content": external_ip,
+                "proxied": bool(record.record_proxied),
+            }
+
+            result = await self.api.put_json(url, json.dumps(data))
+
+            if result["success"]:
+                success.append(record.record_name)
+            else:
+                error.append(record.record_name)
+
+            if success:
+                _LOGGER.info("Updated DNS records %s", success)
+            if error:
+                _LOGGER.error("Failed updating DNS records %s", error)

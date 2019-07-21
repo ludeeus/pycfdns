@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Test",
+            "type": "shell",
+            "command": "python /workspaces/pyhaversion/setup.py test",
+            "group": {
+                "kind": "test",
+                "isDefault": true,
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

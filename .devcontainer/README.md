@@ -32,7 +32,6 @@ The container have some "tasks" to help you testing your changes.
 
 _Start "tasks" by opening the the command pallet (ctrl+shift+p) and select `Tasks: Run Task`_
 
-Running tasks like `Start Home Assistant on port 8124` can be restarted by opening the the command pallet (ctrl+shift+p) and select `Tasks: Restart Running Task`, then select the task you want to restart.
 
 ### Test
 

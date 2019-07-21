@@ -1,6 +1,6 @@
-# Update Cloudflare DNS A records.
+# Update CloudFlare DNS A records.
 
-__Update A records in your DNS zone._
+_Update A records in your DNS zone._
 
 ## Install
 ```bash

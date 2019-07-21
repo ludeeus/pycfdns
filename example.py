@@ -12,7 +12,7 @@ UPDATE_RECORDS = ["test"]
 async def example():
     """Example usage of pytautulli."""
     async with aiohttp.ClientSession() as session:
-        cfupdate = CloudflareUpdater(session, LOOP, EMAIL, TOKEN, ZONE, UPDATE_RECORDS)
+        cfupdate = CloudflareUpdater(session, EMAIL, TOKEN, ZONE, UPDATE_RECORDS)
         zone_id = await cfupdate.get_zone_id()
         records = await cfupdate.get_record_info(zone_id)
         for record in records:

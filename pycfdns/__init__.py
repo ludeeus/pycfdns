@@ -11,16 +11,16 @@ _LOGGER = logging.getLogger("pycfdns")
 class CloudflareUpdater:
     """This class is used to update Cloudflare DNS records."""
 
-    def __init__(self, session, loop, email, token, zone, records=None):
+    def __init__(self, session, email, token, zone, records=None):
         """Initialize"""
-        self.api = CFAPI(session, loop, CFAuth(email, token))
+        self.api = CFAPI(session, CFAuth(email, token))
         self.zone = zone
         self.records = records
 
     async def get_zone_id(self):
         """Get the zone id for the zone."""
         zone_id = None
-        endpoint = "?name={}".format(self.zone)
+        endpoint = f"?name={self.zone}"
         url = BASE_URL.format(endpoint)
         data = await self.api.get_json(url)
         try:
@@ -34,7 +34,7 @@ class CloudflareUpdater:
         record_information = []
         if self.records is None:
             self.records = []
-            endpoint = "{}/dns_records&per_page=100".format(zone_id)
+            endpoint = f"{zone_id}/dns_records&per_page=100"
             url = BASE_URL.format(endpoint)
             data = await self.api.get_json(url)
             data = data["result"]
@@ -46,13 +46,18 @@ class CloudflareUpdater:
             for record in data:
                 self.records.append(record["name"])
 
+        if not self.records:
+            return record_information
+
         for record in self.records:
             if self.zone not in record:
-                record = "{}.{}".format(record, self.zone)
+                record = f"{record}.{self.zone}"
 
-            endpoint = "{}/dns_records?name={}".format(zone_id, record)
+            endpoint = f"{zone_id}/dns_records?name={record}"
             url = BASE_URL.format(endpoint)
             data = await self.api.get_json(url)
+            if data.get("result") is None:
+                continue
             record_information.append(CFRecord(data["result"][0]))
         return record_information
 
@@ -69,7 +74,7 @@ class CloudflareUpdater:
                 continue
             elif record.record_type != "A":
                 continue
-            endpoint = "{}/dns_records/{}".format(zone_id, record.record_id)
+            endpoint = f"{zone_id}/dns_records/{record.record_id}"
             url = BASE_URL.format(endpoint)
             data = {
                 "type": record.record_type,

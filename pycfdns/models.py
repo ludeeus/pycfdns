@@ -14,20 +14,23 @@ _LOGGER = logging.getLogger("pycfdns")
 class CFAPI:
     """Class used to call the API."""
 
-    def __init__(self, session, loop, auth):
+    def __init__(self, session, auth):
         """Initialize."""
         self.session = session
-        self.loop = loop
         self.auth = auth
 
     async def get_json(self, url):
         """Return JSON response from the API."""
         data = None
         try:
-            async with async_timeout.timeout(5, loop=self.loop):
+            async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
                 response = await self.session.get(url, headers=self.auth.header)
                 data = await response.json()
             _LOGGER.debug(data)
+
+            if not data.get("success"):
+                for error in data.get("errors"):
+                    _LOGGER.error("[%s] %s", error.get("code"), error.get("message"))
 
         except asyncio.TimeoutError as error:
             _LOGGER.error("Timeouterror fetching information from %s, %s", url, error)
@@ -43,7 +46,7 @@ class CFAPI:
         """Return the external IP."""
         data = None
         try:
-            async with async_timeout.timeout(5, loop=self.loop):
+            async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
                 response = await self.session.get(GET_EXT_IP_URL)
                 data = await response.text()
             _LOGGER.debug(data)
@@ -68,7 +71,7 @@ class CFAPI:
         """PUT JSON on the API."""
         data = None
         try:
-            async with async_timeout.timeout(5, loop=self.loop):
+            async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
                 response = await self.session.put(
                     url, headers=self.auth.header, data=json_data
                 )

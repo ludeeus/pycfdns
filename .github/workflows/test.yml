@@ -13,7 +13,6 @@ jobs:
         run: |
           python3 -m pip install setuptools wheel pip black
           python3 setup.py develop
-      - name: Run tests
-        run: python3 -m pytest
+
       - name: Check formatting
         run: black .

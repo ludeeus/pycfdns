@@ -8,9 +8,8 @@ TOKEN = "5cdba21d55cdba21d55cdba21d5"
 ZONE = "example.com"
 UPDATE_RECORDS = ["test"]
 
-
 async def example():
-    """Example usage of pytautulli."""
+    """Example usage of pycfdns."""
     async with aiohttp.ClientSession() as session:
         cfupdate = CloudflareUpdater(session, EMAIL, TOKEN, ZONE, UPDATE_RECORDS)
         zone_id = await cfupdate.get_zone_id()
@@ -20,5 +19,4 @@ async def example():
         await cfupdate.update_records(zone_id, records)
 
 
-LOOP = asyncio.get_event_loop()
-LOOP.run_until_complete(example())
+asyncio.get_event_loop().run_until_complete(example())

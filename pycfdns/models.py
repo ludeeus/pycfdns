@@ -6,9 +6,9 @@ import socket
 import aiohttp
 import async_timeout
 
-from pycfdns.const import GET_EXT_IP_URL
+from pycfdns.const import GET_EXT_IP_URL, NAME
 
-_LOGGER = logging.getLogger("pycfdns")
+_LOGGER = logging.getLogger(NAME)
 
 
 class CFAPI:

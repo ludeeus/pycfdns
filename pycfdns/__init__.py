@@ -3,9 +3,9 @@
 import json
 import logging
 from pycfdns.models import CFAPI, CFAuth, CFRecord
-from pycfdns.const import BASE_URL
+from pycfdns.const import BASE_URL, NAME
 
-_LOGGER = logging.getLogger("pycfdns")
+_LOGGER = logging.getLogger(NAME)
 
 
 class CloudflareUpdater:

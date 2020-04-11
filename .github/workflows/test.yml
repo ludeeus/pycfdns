@@ -1,0 +1,19 @@
+name: Test
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python3 -m pip install setuptools wheel pip black
+          python3 -m setup.py develop
+      - name: Run tests
+        run: python3 -m pytest
+      - name: Check formatting
+        run: black .

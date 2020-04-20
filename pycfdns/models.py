@@ -7,6 +7,7 @@ import aiohttp
 import async_timeout
 
 from pycfdns.const import GET_EXT_IP_URL, NAME
+from pycfdns.exceptions import CloudflareException
 
 _LOGGER = logging.getLogger(NAME)
 
@@ -30,16 +31,20 @@ class CFAPI:
 
             if not data.get("success"):
                 for error in data.get("errors"):
-                    _LOGGER.error("[%s] %s", error.get("code"), error.get("message"))
+                    raise CloudflareException(
+                        f"[{error.get('code')}] {error.get('message')}"
+                    )
 
         except asyncio.TimeoutError as error:
-            _LOGGER.error("Timeouterror fetching information from %s, %s", url, error)
+            raise CloudflareException(
+                f"Timeouterror fetching information from {url}, {error}"
+            )
         except (KeyError, TypeError) as error:
-            _LOGGER.error("Error parsing information from %s, %s", url, error)
+            raise CloudflareException(f"Error parsing information from {url}, {error}")
         except (aiohttp.ClientError, socket.gaierror) as error:
-            _LOGGER.error("Error fetching information from %s, %s", url, error)
+            raise CloudflareException(f"Error fetching information from {url}, {error}")
         except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.critical("Something really wrong happend! - %s", error)
+            raise CloudflareException(f"Something really wrong happend! - {error}")
         return data
 
     async def get_external_ip(self):
@@ -52,19 +57,19 @@ class CFAPI:
             _LOGGER.debug(data)
 
         except asyncio.TimeoutError as error:
-            _LOGGER.error(
-                "Timeouterror fetching information from %s, %s", GET_EXT_IP_URL, error
+            raise CloudflareException(
+                f"Timeouterror fetching information from {GET_EXT_IP_URL}, {error}"
             )
         except (KeyError, TypeError) as error:
-            _LOGGER.error(
-                "Error parsing information from %s, %s", GET_EXT_IP_URL, error
+            raise CloudflareException(
+                f"Error parsing information from {GET_EXT_IP_URL}, {error}"
             )
         except (aiohttp.ClientError, socket.gaierror) as error:
-            _LOGGER.error(
-                "Error fetching information from %s, %s", GET_EXT_IP_URL, error
+            raise CloudflareException(
+                f"Error fetching information from {GET_EXT_IP_URL}, {error}"
             )
         except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.critical("Something really wrong happend! - %s", error)
+            raise CloudflareException(f"Something really wrong happend! - {error}")
         return data
 
     async def put_json(self, url, json_data):
@@ -76,15 +81,18 @@ class CFAPI:
                     url, headers=self.auth.header, data=json_data
                 )
                 data = await response.json()
+            _LOGGER.debug(data)
 
         except asyncio.TimeoutError as error:
-            _LOGGER.error("Timeouterror putting information to %s, %s", url, error)
+            raise CloudflareException(
+                f"Timeouterror fetching information from {url}, {error}"
+            )
         except (KeyError, TypeError) as error:
-            _LOGGER.error("Error putting information to %s, %s", url, error)
+            raise CloudflareException(f"Error parsing information from {url}, {error}")
         except (aiohttp.ClientError, socket.gaierror) as error:
-            _LOGGER.error("Error putting information to %s, %s", url, error)
+            raise CloudflareException(f"Error fetching information from {url}, {error}")
         except Exception as error:  # pylint: disable=broad-except
-            _LOGGER.critical("Something really wrong happend! - %s", error)
+            raise CloudflareException(f"Something really wrong happend! - {error}")
         return data
 
 

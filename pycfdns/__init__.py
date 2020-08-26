@@ -12,9 +12,9 @@ _LOGGER = logging.getLogger(NAME)
 class CloudflareUpdater:
     """This class is used to update Cloudflare DNS records."""
 
-    def __init__(self, session, email, token, zone, records=None, api_token=None):
+    def __init__(self, session, token, zone, records=None):
         """Initialize"""
-        self.api = CFAPI(session, CFAuth(email, token, api_token))
+        self.api = CFAPI(session, CFAuth(token))
         self.zone = zone
         self.records = records
 

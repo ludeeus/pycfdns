@@ -99,23 +99,17 @@ class CFAPI:
 class CFAuth:
     """CF Auth."""
 
-    def __init__(self, email, token, api_token=None):
+    def __init__(self, token):
         """Initialize."""
-        self.email = email
         self.token = token
-        self.api_token = api_token
 
     @property
     def header(self):
         """Return auth headers."""
-        if not self.api_token:
-            return {
-                "X-Auth-Email": self.email,
-                "X-Auth-Key": self.token,
-                "Content-Type": "application/json",
-            }
-        else:
-            return {"Authorization": " Bearer " + self.api_token}
+        return {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + self.token,
+        }
 
 
 class CFRecord:

@@ -99,18 +99,16 @@ class CFAPI:
 class CFAuth:
     """CF Auth."""
 
-    def __init__(self, email, token):
+    def __init__(self, token):
         """Initialize."""
-        self.email = email
         self.token = token
 
     @property
     def header(self):
         """Return auth headers."""
         return {
-            "X-Auth-Email": self.email,
-            "X-Auth-Key": self.token,
             "Content-Type": "application/json",
+            "Authorization": "Bearer " + self.token,
         }
 
 

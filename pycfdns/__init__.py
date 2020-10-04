@@ -73,8 +73,7 @@ class CloudflareUpdater:
             if data is None:
                 raise CloudflareException(f"No records found for {zone_id}")
 
-            for record in data:
-                self.records.append(record["name"])
+            self.records = data
 
         if not self.records:
             return record_information

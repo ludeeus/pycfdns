@@ -6,13 +6,13 @@ class CloudflareException(Exception):
 
 
 class CloudflareAuthenticationException(CloudflareException):
-    """Error to indicate we cant authenticate against API."""
+    """Error to indicate we cannot authenticate against API."""
 
 
 class CloudflareConnectionException(CloudflareException):
-    """Error to indicate we cant connect to API."""
+    """Error to indicate we cannot connect to API."""
 
 
 class CloudflareZoneException(CloudflareException):
-    """Error to indicate we couldnt find zone via API."""
+    """Error to indicate we cannot find zone via API."""
 

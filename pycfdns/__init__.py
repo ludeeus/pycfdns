@@ -18,6 +18,22 @@ class CloudflareUpdater:
         self.zone = zone
         self.records = records
 
+    async def get_zones(self):
+        """Get the zones linked to account."""
+        zones = []
+
+        url = BASE_URL.format("")
+        data = await self.api.get_json(url)
+        data = data["result"]
+
+        if data is None:
+            return None
+
+        for zone in data:
+            zones.append(zone["name"])
+
+        return zones
+
     async def get_zone_id(self):
         """Get the zone id for the zone."""
         zone_id = None

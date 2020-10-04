@@ -41,7 +41,7 @@ class CFAPI:
         except (aiohttp.ClientError, socket.gaierror) as error:
             raise CloudflareConnectionException(
                 f"Error fetching information from {url}, {error}"
-            ) ffom error
+            ) from error
         except Exception as error:  # pylint: disable=broad-except
             raise CloudflareException(
                 f"Something really wrong happend! - {error}"

@@ -4,7 +4,7 @@ import json
 import logging
 from pycfdns.models import CFAPI, CFAuth, CFRecord
 from pycfdns.const import BASE_URL, NAME
-from pycfdns.exceptions import CloudflareException
+from pycfdns.exceptions import CloudflareException, CloudflareZoneException
 
 _LOGGER = logging.getLogger(NAME)
 
@@ -26,8 +26,8 @@ class CloudflareUpdater:
         data = await self.api.get_json(url)
         try:
             zone_id = data["result"][0]["id"]
-        except Exception:
-            raise CloudflareException("Could not get zone ID")
+        except Exception as error:
+            raise CloudflareZoneException("Could not get zone ID") from error
         return zone_id
 
     async def get_record_info(self, zone_id):

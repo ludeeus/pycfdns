@@ -18,6 +18,22 @@ class CloudflareUpdater:
         self.zone = zone
         self.records = records
 
+    async def get_zones(self):
+        """Get the zones linked to account."""
+        zones = []
+
+        url = BASE_URL.format("")
+        data = await self.api.get_json(url)
+        data = data["result"]
+
+        if data is None:
+            return None
+
+        for zone in data:
+            zones.append(zone["name"])
+
+        return zones
+
     async def get_zone_id(self):
         """Get the zone id for the zone."""
         zone_id = None
@@ -30,21 +46,34 @@ class CloudflareUpdater:
             raise CloudflareZoneException("Could not get zone ID") from error
         return zone_id
 
+    async def get_zone_records(self, zone_id):
+        """Get the records of a zone."""
+        records = []
+
+        endpoint = f"{zone_id}/dns_records&per_page=100"
+        url = BASE_URL.format(endpoint)
+        data = await self.api.get_json(url)
+        data = data["result"]
+
+        if data is None:
+            return None
+
+        for record in data:
+            records.append(record["name"])
+
+        return records
+
     async def get_record_info(self, zone_id):
         """Get the information of the records."""
         record_information = []
         if self.records is None:
             self.records = []
-            endpoint = f"{zone_id}/dns_records&per_page=100"
-            url = BASE_URL.format(endpoint)
-            data = await self.api.get_json(url)
-            data = data["result"]
-
+            data = await self.get_zone_records(zone_id)
+            
             if data is None:
                 raise CloudflareException(f"No records found for {zone_id}")
 
-            for record in data:
-                self.records.append(record["name"])
+            self.records = data
 
         if not self.records:
             return record_information

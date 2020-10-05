@@ -7,7 +7,11 @@ import aiohttp
 import async_timeout
 
 from pycfdns.const import GET_EXT_IP_URL, NAME
-from pycfdns.exceptions import CloudflareException
+from pycfdns.exceptions import (
+    CloudflareAuthenticationException,
+    CloudflareConnectionException,
+    CloudflareException,
+)
 
 _LOGGER = logging.getLogger(NAME)
 
@@ -26,7 +30,29 @@ class CFAPI:
         try:
             async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
                 response = await self.session.get(url, headers=self.auth.header)
-                data = await response.json()
+        except asyncio.TimeoutError as error:
+            raise CloudflareConnectionException(
+                f"Timeouterror fetching information from {url}, {error}"
+            ) from error
+        except (KeyError, TypeError) as error:
+            raise CloudflareException(
+                f"Error parsing information from {url}, {error}"
+            ) from error
+        except (aiohttp.ClientError, socket.gaierror) as error:
+            raise CloudflareConnectionException(
+                f"Error fetching information from {url}, {error}"
+            ) from error
+        except Exception as error:  # pylint: disable=broad-except
+            raise CloudflareException(
+                f"Something really wrong happend! - {error}"
+            ) from error
+        else:
+            if response.status == 403:
+                raise CloudflareAuthenticationException(
+                    "Access forbidden. Please ensure valid API Key is provided"
+                )
+
+            data = await response.json()
             _LOGGER.debug(data)
 
             if not data.get("success"):
@@ -35,16 +61,6 @@ class CFAPI:
                         f"[{error.get('code')}] {error.get('message')}"
                     )
 
-        except asyncio.TimeoutError as error:
-            raise CloudflareException(
-                f"Timeouterror fetching information from {url}, {error}"
-            )
-        except (KeyError, TypeError) as error:
-            raise CloudflareException(f"Error parsing information from {url}, {error}")
-        except (aiohttp.ClientError, socket.gaierror) as error:
-            raise CloudflareException(f"Error fetching information from {url}, {error}")
-        except Exception as error:  # pylint: disable=broad-except
-            raise CloudflareException(f"Something really wrong happend! - {error}")
         return data
 
     async def get_external_ip(self):
@@ -53,23 +69,26 @@ class CFAPI:
         try:
             async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
                 response = await self.session.get(GET_EXT_IP_URL)
-                data = await response.text()
-            _LOGGER.debug(data)
-
         except asyncio.TimeoutError as error:
-            raise CloudflareException(
+            raise CloudflareConnectionException(
                 f"Timeouterror fetching information from {GET_EXT_IP_URL}, {error}"
-            )
+            ) from error
         except (KeyError, TypeError) as error:
             raise CloudflareException(
                 f"Error parsing information from {GET_EXT_IP_URL}, {error}"
-            )
+            ) from error
         except (aiohttp.ClientError, socket.gaierror) as error:
-            raise CloudflareException(
+            raise CloudflareConnectionException(
                 f"Error fetching information from {GET_EXT_IP_URL}, {error}"
-            )
+            ) from error
         except Exception as error:  # pylint: disable=broad-except
-            raise CloudflareException(f"Something really wrong happend! - {error}")
+            raise CloudflareException(
+                f"Something really wrong happend! - {error}"
+            ) from error
+        else:
+            data = await response.text()
+            _LOGGER.debug(data)
+
         return data
 
     async def put_json(self, url, json_data):
@@ -80,19 +99,31 @@ class CFAPI:
                 response = await self.session.put(
                     url, headers=self.auth.header, data=json_data
                 )
-                data = await response.json()
+        except asyncio.TimeoutError as error:
+            raise CloudflareConnectionException(
+                f"Timeouterror fetching information from {url}, {error}"
+            ) from error
+        except (KeyError, TypeError) as error:
+            raise CloudflareException(
+                f"Error parsing information from {url}, {error}"
+            ) from error
+        except (aiohttp.ClientError, socket.gaierror) as error:
+            raise CloudflareConnectionException(
+                f"Error fetching information from {url}, {error}"
+            ) from error
+        except Exception as error:  # pylint: disable=broad-except
+            raise CloudflareException(
+                f"Something really wrong happend! - {error}"
+            ) from error
+        else:
+            if response.status == 403:
+                raise CloudflareAuthenticationException(
+                    "Access forbidden. Please ensure valid API Key is provided"
+                )
+
+            data = await response.json()
             _LOGGER.debug(data)
 
-        except asyncio.TimeoutError as error:
-            raise CloudflareException(
-                f"Timeouterror fetching information from {url}, {error}"
-            )
-        except (KeyError, TypeError) as error:
-            raise CloudflareException(f"Error parsing information from {url}, {error}")
-        except (aiohttp.ClientError, socket.gaierror) as error:
-            raise CloudflareException(f"Error fetching information from {url}, {error}")
-        except Exception as error:  # pylint: disable=broad-except
-            raise CloudflareException(f"Something really wrong happend! - {error}")
         return data
 
 

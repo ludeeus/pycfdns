@@ -46,13 +46,13 @@ class CloudflareUpdater:
             raise CloudflareZoneException("Could not get zone ID") from error
         return zone_id
 
-    async def get_zone_records(self, zone_id, zone_type = None):
+    async def get_zone_records(self, zone_id, record_type = None):
         """Get the records of a zone."""
         records = []
 
         endpoint = f"{zone_id}/dns_records&per_page=100"
-        if zone_type:
-            endpoint += f"&type={zone_type}"
+        if record_type:
+            endpoint += f"&type={record_type}"
         
         url = BASE_URL.format(endpoint)
         data = await self.api.get_json(url)

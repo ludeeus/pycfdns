@@ -50,7 +50,7 @@ class CloudflareUpdater:
         """Get the records of a zone."""
         records = []
 
-        endpoint = f"{zone_id}/dns_records&per_page=100"
+        endpoint = f"{zone_id}/dns_records?per_page=100"
         if record_type:
             endpoint += f"&type={record_type}"
         

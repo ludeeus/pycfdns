@@ -12,9 +12,9 @@ _LOGGER = logging.getLogger(NAME)
 class CloudflareUpdater:
     """This class is used to update Cloudflare DNS records."""
 
-    def __init__(self, session, token, zone, records=None):
+    def __init__(self, session, token, zone, records=None, timeout=10):
         """Initialize"""
-        self.api = CFAPI(session, CFAuth(token))
+        self.api = CFAPI(session, CFAuth(token), timeout)
         self.zone = zone
         self.records = records
 
@@ -46,14 +46,14 @@ class CloudflareUpdater:
             raise CloudflareZoneException("Could not get zone ID") from error
         return zone_id
 
-    async def get_zone_records(self, zone_id, record_type = None):
+    async def get_zone_records(self, zone_id, record_type=None):
         """Get the records of a zone."""
         records = []
 
         endpoint = f"{zone_id}/dns_records?per_page=100"
         if record_type:
             endpoint += f"&type={record_type}"
-        
+
         url = BASE_URL.format(endpoint)
         data = await self.api.get_json(url)
         data = data["result"]
@@ -72,7 +72,7 @@ class CloudflareUpdater:
         if self.records is None:
             self.records = []
             data = await self.get_zone_records(zone_id)
-            
+
             if data is None:
                 raise CloudflareException(f"No records found for {zone_id}")
 

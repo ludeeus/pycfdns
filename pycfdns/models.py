@@ -19,20 +19,23 @@ _LOGGER = logging.getLogger(NAME)
 class CFAPI:
     """Class used to call the API."""
 
-    def __init__(self, session, auth):
+    def __init__(self, session, auth, timeout):
         """Initialize."""
         self.session = session
         self.auth = auth
+        self.timeout = timeout
 
     async def get_json(self, url):
         """Return JSON response from the API."""
         data = None
         try:
-            async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
+            async with async_timeout.timeout(
+                self.timeout, loop=asyncio.get_event_loop()
+            ):
                 response = await self.session.get(url, headers=self.auth.header)
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
-                f"Timeouterror fetching information from {url}, {error}"
+                f"Timeout error fetching information from {url}, {error}"
             ) from error
         except (KeyError, TypeError) as error:
             raise CloudflareException(
@@ -67,11 +70,13 @@ class CFAPI:
         """Return the external IP."""
         data = None
         try:
-            async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
+            async with async_timeout.timeout(
+                self.timeout, loop=asyncio.get_event_loop()
+            ):
                 response = await self.session.get(GET_EXT_IP_URL)
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
-                f"Timeouterror fetching information from {GET_EXT_IP_URL}, {error}"
+                f"Timeout error fetching information from {GET_EXT_IP_URL}, {error}"
             ) from error
         except (KeyError, TypeError) as error:
             raise CloudflareException(
@@ -95,13 +100,15 @@ class CFAPI:
         """PUT JSON on the API."""
         data = None
         try:
-            async with async_timeout.timeout(5, loop=asyncio.get_event_loop()):
+            async with async_timeout.timeout(
+                self.timeout, loop=asyncio.get_event_loop()
+            ):
                 response = await self.session.put(
                     url, headers=self.auth.header, data=json_data
                 )
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
-                f"Timeouterror fetching information from {url}, {error}"
+                f"Timeout error fetching information from {url}, {error}"
             ) from error
         except (KeyError, TypeError) as error:
             raise CloudflareException(
@@ -139,7 +146,7 @@ class CFAuth:
         """Return auth headers."""
         return {
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + self.token,
+            "Authorization": f"Bearer {self.token}",
         }
 
 

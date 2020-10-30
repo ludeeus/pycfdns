@@ -1,17 +1,12 @@
-// See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
 	"name": "pycfdns",
 	"context": "..",
 	"image": "ludeeus/container:python",
 	"postCreateCommand": "python3 setup.py develop",
-	"runArgs": [
-		"-v",
-		"${env:HOME}${env:USERPROFILE}/.ssh:/tmp/.ssh"
-	],
 	"extensions": [
 		"ms-python.python",
 		"github.vscode-pull-request-github",
-		"tabnine.tabnine-vscode"
+		"ms-python.vscode-pylance"
 	],
 	"settings": {
 		"files.eol": "\n",

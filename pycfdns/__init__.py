@@ -115,11 +115,12 @@ class CloudflareUpdater:
                 )
             endpoint = f"{zone_id}/dns_records/{record.record_id}"
             url = BASE_URL.format(endpoint)
+
             data = {
                 "type": record.record_type,
                 "name": record.record_name,
                 "content": external_ip,
-                "proxied": bool(record.record_proxied),
+                "proxied": record.record_proxied,
             }
 
             result = await self.api.put_json(url, json.dumps(data))

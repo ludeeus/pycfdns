@@ -171,7 +171,7 @@ class CFRecord:
 
     @property
     def record_proxied(self):
-        return str(self.record.get("proxied"))
+        return self.record.get("proxied")
 
     @property
     def record_content(self):

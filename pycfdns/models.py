@@ -6,7 +6,7 @@ import socket
 import aiohttp
 import async_timeout
 
-from pycfdns.const import GET_EXT_IP_URL, NAME
+from pycfdns.const import GET_EXT_IP_URL_V4, GET_EXT_IP_URL_V6, GET_EXT_IP_URL, NAME
 from pycfdns.exceptions import (
     CloudflareAuthenticationException,
     CloudflareConnectionException,
@@ -66,25 +66,25 @@ class CFAPI:
 
         return data
 
-    async def get_external_ip(self):
+    async def get_external_ip(self, url=GET_EXT_IP_URL):
         """Return the external IP."""
         data = None
         try:
             async with async_timeout.timeout(
-                self.timeout, loop=asyncio.get_event_loop()
+                    self.timeout, loop=asyncio.get_event_loop()
             ):
-                response = await self.session.get(GET_EXT_IP_URL)
+                response = await self.session.get(url)
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
-                f"Timeout error fetching information from {GET_EXT_IP_URL}, {error}"
+                f"Timeout error fetching information from {url}, {error}"
             ) from error
         except (KeyError, TypeError) as error:
             raise CloudflareException(
-                f"Error parsing information from {GET_EXT_IP_URL}, {error}"
+                f"Error parsing information from {url}, {error}"
             ) from error
         except (aiohttp.ClientError, socket.gaierror) as error:
             raise CloudflareConnectionException(
-                f"Error fetching information from {GET_EXT_IP_URL}, {error}"
+                f"Error fetching information from {url}, {error}"
             ) from error
         except Exception as error:  # pylint: disable=broad-except
             raise CloudflareException(
@@ -95,6 +95,15 @@ class CFAPI:
             _LOGGER.debug(data)
 
         return data
+
+    async def get_external_ip_v4(self):
+        """Return the external IPv4."""
+        return await self.get_external_ip(GET_EXT_IP_URL_V4)
+
+    async def get_external_ip_v6(self):
+        """Return the external IPv6."""
+        return await self.get_external_ip(GET_EXT_IP_URL_V6)
+
 
     async def put_json(self, url, json_data):
         """PUT JSON on the API."""

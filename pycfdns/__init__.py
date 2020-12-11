@@ -90,32 +90,48 @@ class CloudflareUpdater:
             data = await self.api.get_json(url)
             if data.get("result") is None:
                 continue
-            record_information.append(CFRecord(data["result"][0]))
+            for result in data["result"]:
+                record_information.append(CFRecord(result))
         return record_information
 
-    async def update_records(self, zone_id, records, external_ip=None):
+    async def update_records(self, zone_id, records, external_ip_v4=None, external_ip_v6=None):
         """Update DNS records."""
-        if external_ip is None:
-            external_ip = await self.api.get_external_ip()
-        success, error = [], []
+        if external_ip_v4 is None:
+            external_ip_v4 = await self.api.get_external_ip_v4()
 
-        if external_ip is None:
+        if external_ip_v6 is None:
+            external_ip_v6 = await self.api.get_external_ip_v6()
+
+        success, error = [], [],
+        external_ip = None
+
+        if external_ip_v4 is None and external_ip_v6 is None:
             raise CloudflareException("No external IP, skipping update")
 
         for record in records:
+
+            if record.record_type == "A":
+                external_ip = external_ip_v4
+
+            if record.record_type == "AAAA":
+                external_ip = external_ip_v6
+
+            if external_ip is None:
+                _LOGGER.debug(
+                    "Neither A nor AAAA record found (%s), skipping update",
+                    record.record_name,
+                )
+                continue
+
             if record.record_content == external_ip:
                 _LOGGER.debug(
                     "No need to update record (%s) IP did not change",
                     record.record_name,
                 )
                 continue
-            if record.record_type != "A":
-                raise CloudflareException(
-                    f"Record type {record.record_type}, is not supported"
-                )
+
             endpoint = f"{zone_id}/dns_records/{record.record_id}"
             url = BASE_URL.format(endpoint)
-
             data = {
                 "type": record.record_type,
                 "name": record.record_name,
@@ -130,7 +146,7 @@ class CloudflareUpdater:
             else:
                 error.append(record.record_name)
 
-            if success:
-                _LOGGER.debug("Updated DNS records %s", success)
-            if error:
-                raise CloudflareException(f"Failed updating DNS records {error}")
+        if success:
+            _LOGGER.debug("Updated DNS records %s", success)
+        if error:
+            raise CloudflareException(f"Failed updating DNS records {error}")

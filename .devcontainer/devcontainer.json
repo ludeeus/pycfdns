@@ -1,7 +1,7 @@
 {
 	"name": "pycfdns",
 	"context": "..",
-	"image": "ludeeus/container:python",
+	"image": "ghcr.io/ludeeus/devcontainer/python:stable",
 	"postCreateCommand": "python3 setup.py develop",
 	"extensions": [
 		"ms-python.python",

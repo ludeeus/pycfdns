@@ -24,7 +24,10 @@ jobs:
 
       - name: Set version number
         run: |
-          sed -i "s/version=\"0.0.0\"/version=\"$GIT_TAG_NAME\"/" ${{github.workspace}}/setup.py
+          export version=${{ github.ref }}
+          sed -i "s|master|${version##*/}|" ./setup.py
+          cat ./setup.py
+
       - name: Publish to PyPi
         env:
           TWINE_USERNAME: __token__

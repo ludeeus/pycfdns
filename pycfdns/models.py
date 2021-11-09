@@ -29,9 +29,7 @@ class CFAPI:
         """Return JSON response from the API."""
         data = None
         try:
-            async with async_timeout.timeout(
-                self.timeout, loop=asyncio.get_event_loop()
-            ):
+            async with async_timeout.timeout(self.timeout):
                 response = await self.session.get(url, headers=self.auth.header)
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
@@ -70,9 +68,7 @@ class CFAPI:
         """Return the external IP."""
         data = None
         try:
-            async with async_timeout.timeout(
-                self.timeout, loop=asyncio.get_event_loop()
-            ):
+            async with async_timeout.timeout(self.timeout):
                 response = await self.session.get(GET_EXT_IP_URL)
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
@@ -100,9 +96,7 @@ class CFAPI:
         """PUT JSON on the API."""
         data = None
         try:
-            async with async_timeout.timeout(
-                self.timeout, loop=asyncio.get_event_loop()
-            ):
+            async with async_timeout.timeout(self.timeout):
                 response = await self.session.put(
                     url, headers=self.auth.header, data=json_data
                 )

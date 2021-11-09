@@ -19,9 +19,6 @@ jobs:
       - name: Install dependencies
         run: python3 -m pip install setuptools wheel twine
 
-      - uses: olegtarasov/get-tag@v2
-        name: Set tag envronment variable
-
       - name: Set version number
         run: |
           export version=${{ github.ref }}

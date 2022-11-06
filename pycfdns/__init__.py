@@ -2,7 +2,8 @@
 # pylint: disable=broad-except
 import json
 import logging
-from pycfdns.models import CFAPI, CFAuth, CFRecord
+from typing import Any
+from pycfdns.models import CFAPI, CFAuth, CFRecord, DNSRecord
 from pycfdns.const import BASE_URL, NAME
 from pycfdns.exceptions import CloudflareException, CloudflareZoneException
 
@@ -107,17 +108,16 @@ class CloudflareUpdater:
                     record.record_name,
                 )
                 continue
-            endpoint = f"{zone_id}/dns_records/{record.record_id}"
-            url = BASE_URL.format(endpoint)
 
-            data = {
-                "type": record.record_type,
-                "name": record.record_name,
-                "content": content,
-                "proxied": record.record_proxied,
-            }
-
-            result = await self.api.put_json(url, json.dumps(data))
+            result = await self.update_dns_record(
+                zone_id=zone_id,
+                record={
+                    "type": record.record_type,
+                    "name": record.record_name,
+                    "content": content,
+                    "proxied": record.record_proxied,
+                },
+            )
 
             if result["success"]:
                 success.append(record.record_name)
@@ -128,3 +128,22 @@ class CloudflareUpdater:
                 _LOGGER.debug("Updated DNS records %s", success)
             if error:
                 raise CloudflareException(f"Failed updating DNS records {error}")
+
+    async def update_dns_record(
+        self,
+        *,
+        zone_id: str,
+        record: DNSRecord,
+    ) -> dict[str, Any]:
+        """Update a DNS record."""
+        return await self.api.put_json(
+            BASE_URL.format(f"{zone_id}/dns_records/{record['id']}"),
+            json.dumps(
+                {
+                    "type": record["type"],
+                    "name": record["name"],
+                    "content": record["content"],
+                    "proxied": record["proxied"],
+                }
+            ),
+        )

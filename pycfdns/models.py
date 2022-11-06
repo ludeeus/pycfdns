@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import socket
+from typing import TypedDict
 import aiohttp
 import async_timeout
 
@@ -142,3 +143,13 @@ class CFRecord:
     @property
     def record_content(self):
         return self.record.get("content")
+
+
+class DNSRecord(TypedDict):
+    """Dictionary representation of a DNS record"""
+
+    id: str
+    type: str
+    name: str
+    proxied: bool
+    content: str

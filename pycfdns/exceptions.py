@@ -15,4 +15,3 @@ class CloudflareConnectionException(CloudflareException):
 
 class CloudflareZoneException(CloudflareException):
     """Error to indicate we cannot find zone via API."""
-

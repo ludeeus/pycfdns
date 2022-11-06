@@ -1,6 +1,6 @@
-# Update CloudFlare DNS A records.
+# Update CloudFlare DNS records.
 
-_Update A records in your DNS zone._
+_Update records in your DNS zone._
 
 ## Install
 

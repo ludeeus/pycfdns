@@ -93,33 +93,27 @@ class CloudflareUpdater:
             record_information.append(CFRecord(data["result"][0]))
         return record_information
 
-    async def update_records(self, zone_id, records, external_ip=None):
+    async def update_records(self, zone_id, records, content):
         """Update DNS records."""
-        if external_ip is None:
-            external_ip = await self.api.get_external_ip()
         success, error = [], []
 
-        if external_ip is None:
-            raise CloudflareException("No external IP, skipping update")
+        if content is None:
+            raise CloudflareException("No content provided, skipping update")
 
         for record in records:
-            if record.record_content == external_ip:
+            if record.record_content == content:
                 _LOGGER.debug(
-                    "No need to update record (%s) IP did not change",
+                    "No need to update record (%s) content did not change",
                     record.record_name,
                 )
                 continue
-            if record.record_type != "A":
-                raise CloudflareException(
-                    f"Record type {record.record_type}, is not supported"
-                )
             endpoint = f"{zone_id}/dns_records/{record.record_id}"
             url = BASE_URL.format(endpoint)
 
             data = {
                 "type": record.record_type,
                 "name": record.record_name,
-                "content": external_ip,
+                "content": content,
                 "proxied": record.record_proxied,
             }
 

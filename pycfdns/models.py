@@ -148,8 +148,8 @@ class CFRecord:
 class DNSRecord(TypedDict):
     """Dictionary representation of a DNS record"""
 
+    content: str
     id: str
-    type: str
     name: str
     proxied: bool
-    content: str
+    type: str

@@ -6,7 +6,7 @@ import socket
 import aiohttp
 import async_timeout
 
-from pycfdns.const import GET_EXT_IP_URL, NAME
+from pycfdns.const import NAME
 from pycfdns.exceptions import (
     CloudflareAuthenticationException,
     CloudflareConnectionException,
@@ -61,34 +61,6 @@ class CFAPI:
                     raise CloudflareException(
                         f"[{error.get('code')}] {error.get('message')}"
                     )
-
-        return data
-
-    async def get_external_ip(self):
-        """Return the external IP."""
-        data = None
-        try:
-            async with async_timeout.timeout(self.timeout):
-                response = await self.session.get(GET_EXT_IP_URL)
-        except asyncio.TimeoutError as error:
-            raise CloudflareConnectionException(
-                f"Timeout error fetching information from {GET_EXT_IP_URL}, {error}"
-            ) from error
-        except (KeyError, TypeError) as error:
-            raise CloudflareException(
-                f"Error parsing information from {GET_EXT_IP_URL}, {error}"
-            ) from error
-        except (aiohttp.ClientError, socket.gaierror) as error:
-            raise CloudflareConnectionException(
-                f"Error fetching information from {GET_EXT_IP_URL}, {error}"
-            ) from error
-        except Exception as error:  # pylint: disable=broad-except
-            raise CloudflareException(
-                f"Something really wrong happend! - {error}"
-            ) from error
-        else:
-            data = await response.text()
-            _LOGGER.debug(data)
 
         return data
 

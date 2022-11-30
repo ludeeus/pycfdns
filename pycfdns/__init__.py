@@ -123,6 +123,7 @@ class CloudflareUpdater:
             result = await self.update_dns_record(
                 zone_id=zone_id,
                 record={
+                    "id": record.record_id,
                     "type": record.record_type,
                     "name": record.record_name,
                     "content": content,

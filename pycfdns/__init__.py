@@ -1,10 +1,12 @@
 """Update Cloudflare DNS A-records."""
 # pylint: disable=broad-except
+from __future__ import annotations
+
 import json
 import logging
 from typing import Any
 from pycfdns.models import CFAPI, CFAuth, CFRecord, DNSRecord
-from pycfdns.const import BASE_URL, NAME
+from pycfdns.const import NAME
 from pycfdns.exceptions import CloudflareException, CloudflareZoneException
 
 _LOGGER = logging.getLogger(NAME)
@@ -19,12 +21,18 @@ class CloudflareUpdater:
         self.zone = zone
         self.records = records
 
+    def _endpoint(self, *, path: str = "", query: dict[str, str] | None = None) -> str:
+        """Return the full URL to a endpoint."""
+        endpoint = f"https://api.cloudflare.com/client/v4/zones/{path}"
+        if query is None:
+            return endpoint
+        return f"{endpoint}?{'&'.join(f'{key}={value}' for key, value in query.items() if value is not  None)}"
+
     async def get_zones(self):
         """Get the zones linked to account."""
         zones = []
 
-        url = BASE_URL.format("")
-        data = await self.api.get_json(url)
+        data = await self.api.get_json(self._endpoint())
         data = data["result"]
 
         if data is None:
@@ -38,10 +46,10 @@ class CloudflareUpdater:
     async def get_zone_id(self):
         """Get the zone id for the zone."""
         zone_id = None
-        endpoint = f"?name={self.zone}"
-        url = BASE_URL.format(endpoint)
-        data = await self.api.get_json(url)
         try:
+            data = await self.api.get_json(
+                url=self._endpoint(query={"name": self.zone})
+            )
             zone_id = data["result"][0]["id"]
         except Exception as error:
             raise CloudflareZoneException("Could not get zone ID") from error
@@ -51,12 +59,12 @@ class CloudflareUpdater:
         """Get the records of a zone."""
         records = []
 
-        endpoint = f"{zone_id}/dns_records?per_page=100"
-        if record_type:
-            endpoint += f"&type={record_type}"
-
-        url = BASE_URL.format(endpoint)
-        data = await self.api.get_json(url)
+        data = await self.api.get_json(
+            self._endpoint(
+                path=f"{zone_id}/dns_records",
+                query={"per_page": "100", "type": record_type},
+            )
+        )
         data = data["result"]
 
         if data is None:
@@ -86,9 +94,12 @@ class CloudflareUpdater:
             if self.zone not in record:
                 record = f"{record}.{self.zone}"
 
-            endpoint = f"{zone_id}/dns_records?name={record}"
-            url = BASE_URL.format(endpoint)
-            data = await self.api.get_json(url)
+            data = await self.api.get_json(
+                self._endpoint(
+                    path="/dns_records",
+                    query={"name": record},
+                )
+            )
             if data.get("result") is None:
                 continue
             record_information.append(CFRecord(data["result"][0]))
@@ -138,7 +149,7 @@ class CloudflareUpdater:
     ) -> dict[str, Any]:
         """Update a DNS record."""
         return await self.api.put_json(
-            BASE_URL.format(f"{zone_id}/dns_records/{record['id']}"),
+            self._endpoint(path=f"{zone_id}/dns_records/{record['id']}"),
             json.dumps(
                 {
                     "type": record["type"],

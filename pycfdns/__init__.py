@@ -97,7 +97,7 @@ class CloudflareUpdater:
             data = await self.api.get_json(
                 self._endpoint(
                     path="/dns_records",
-                    query={"pername_page": record},
+                    query={"name": record},
                 )
             )
             if data.get("result") is None:

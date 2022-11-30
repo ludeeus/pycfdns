@@ -8,7 +8,7 @@ setuptools.setup(
     version="master",
     author="Joakim Sorensen",
     author_email="hi@ludeeus.dev",
-    description="Update Cloudflare DNS A-records.",
+    description="Update Cloudflare DNS records.",
     install_requires=["aiohttp>=3.6.1,<4.0"],
     long_description=LONG,
     long_description_content_type="text/markdown",

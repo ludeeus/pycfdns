@@ -96,7 +96,7 @@ class CloudflareUpdater:
 
             data = await self.api.get_json(
                 self._endpoint(
-                    path="/dns_records",
+                    path=f"{zone_id}/dns_records",
                     query={"name": record},
                 )
             )

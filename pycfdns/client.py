@@ -31,11 +31,11 @@ class CloudflareApiClient:
 
     async def get(self, url: str) -> dict[str, Any]:
         """Return JSON response from the API."""
-        return self._do_request(url=url, method="GET")
+        return await self._do_request(url=url, method="GET")
 
     async def put(self, url: str, json_data: dict[str, Any]) -> dict[str, Any]:
         """PUT JSON on the API."""
-        return self._do_request(url=url, method="PUT", data=json_data)
+        return await self._do_request(url=url, method="PUT", data=json_data)
 
     async def _do_request(
         self,

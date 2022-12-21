@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import json
-import logging
 from typing import Any
 from pycfdns.models import CFRecord, DNSRecord
-from pycfdns.const import NAME
 from pycfdns.exceptions import CloudflareException, CloudflareZoneException
 
 from .client import CloudflareApiClient
-
-_LOGGER = logging.getLogger(NAME)
+from .logger import LOGGER
 
 
 class CloudflareUpdater:
@@ -114,7 +111,7 @@ class CloudflareUpdater:
 
         for record in records:
             if record.record_content == content:
-                _LOGGER.debug(
+                LOGGER.debug(
                     "No need to update record (%s) content did not change",
                     record.record_name,
                 )
@@ -137,7 +134,7 @@ class CloudflareUpdater:
                 error.append(record.record_name)
 
             if success:
-                _LOGGER.debug("Updated DNS records %s", success)
+                LOGGER.debug("Updated DNS records %s", success)
             if error:
                 raise CloudflareException(f"Failed updating DNS records {error}")
 

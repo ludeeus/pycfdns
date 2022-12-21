@@ -56,22 +56,22 @@ class CloudflareApiClient:
                     },
                     data=data,
                 )
-        except asyncio.TimeoutError as error:
+        except asyncio.TimeoutError as exception:
             raise CloudflareConnectionException(
-                f"Timeout error fetching information from {url}, {error}"
-            ) from error
-        except (KeyError, TypeError) as error:
+                f"Timeout error fetching information from {url}, {exception}"
+            ) from exception
+        except (KeyError, TypeError) as exception:
             raise CloudflareException(
-                f"Error parsing information from {url}, {error}"
-            ) from error
-        except (ClientError, gaierror) as error:
+                f"Error parsing information from {url}, {exception}"
+            ) from exception
+        except (ClientError, gaierror) as exception:
             raise CloudflareConnectionException(
-                f"Error fetching information from {url}, {error}"
-            ) from error
-        except Exception as error:  # pylint: disable=broad-except
+                f"Error fetching information from {url}, {exception}"
+            ) from exception
+        except Exception as exception:  # pylint: disable=broad-except
             raise CloudflareException(
-                f"Something really wrong happend! - {error}"
-            ) from error
+                f"Something really wrong happend! - {exception}"
+            ) from exception
         else:
             if response.status == 403:
                 raise CloudflareAuthenticationException(
@@ -82,9 +82,9 @@ class CloudflareApiClient:
             LOGGER.debug(result)
 
             if not result.get("success"):
-                for error in result.get("errors", []):
+                for entry in result.get("errors", []):
                     raise CloudflareException(
-                        f"[{error.get('code')}] {error.get('message')}"
+                        f"[{entry.get('code')}] {entry.get('message')}"
                     )
 
         return result

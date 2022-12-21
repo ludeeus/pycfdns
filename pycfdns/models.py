@@ -1,17 +1,17 @@
 """pycfdns models."""
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class CFRecord:
     """CFRecord represents a Cloudflare DNS record."""
 
-    def __init__(self, record: dict[str, str]) -> None:
+    def __init__(self, record: dict[str, Any]) -> None:
         """Initialize the CFRecord object with a dictionary representation of the Cloudflare DNS record.
 
         Args:
-            record (Dict[str, str]): A dictionary representation of the Cloudflare DNS record.
+            record (dict[str, Any]): A dictionary representation of the Cloudflare DNS record.
         """
         self.record = record
 

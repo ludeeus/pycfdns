@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any
-from pycfdns.models import CFAPI, CFRecord, DNSRecord
+from pycfdns.models import CFRecord, DNSRecord
 from pycfdns.const import NAME
 from pycfdns.exceptions import CloudflareException, CloudflareZoneException
+
+from .client import CloudflareApiClient
 
 _LOGGER = logging.getLogger(NAME)
 
@@ -17,7 +19,7 @@ class CloudflareUpdater:
 
     def __init__(self, session, token, zone, records=None, timeout=10):
         """Initialize"""
-        self.api = CFAPI(session, token, timeout)
+        self.api = CloudflareApiClient(session, token, timeout)
         self.zone = zone
         self.records = records
 
@@ -32,7 +34,7 @@ class CloudflareUpdater:
         """Get the zones linked to account."""
         zones = []
 
-        data = await self.api.get_json(self._endpoint())
+        data = await self.api.get(self._endpoint())
         data = data["result"]
 
         if data is None:
@@ -47,9 +49,7 @@ class CloudflareUpdater:
         """Get the zone id for the zone."""
         zone_id = None
         try:
-            data = await self.api.get_json(
-                url=self._endpoint(query={"name": self.zone})
-            )
+            data = await self.api.get(url=self._endpoint(query={"name": self.zone}))
             zone_id = data["result"][0]["id"]
         except Exception as error:
             raise CloudflareZoneException("Could not get zone ID") from error
@@ -59,7 +59,7 @@ class CloudflareUpdater:
         """Get the records of a zone."""
         records = []
 
-        data = await self.api.get_json(
+        data = await self.api.get(
             self._endpoint(
                 path=f"{zone_id}/dns_records",
                 query={"per_page": "100", "type": record_type},
@@ -94,7 +94,7 @@ class CloudflareUpdater:
             if self.zone not in record:
                 record = f"{record}.{self.zone}"
 
-            data = await self.api.get_json(
+            data = await self.api.get(
                 self._endpoint(
                     path=f"{zone_id}/dns_records",
                     query={"name": record},
@@ -148,7 +148,7 @@ class CloudflareUpdater:
         record: DNSRecord,
     ) -> dict[str, Any]:
         """Update a DNS record."""
-        return await self.api.put_json(
+        return await self.api.put(
             self._endpoint(path=f"{zone_id}/dns_records/{record['id']}"),
             json.dumps(
                 {

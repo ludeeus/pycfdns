@@ -20,10 +20,10 @@ _LOGGER = logging.getLogger(NAME)
 class CFAPI:
     """Class used to call the API."""
 
-    def __init__(self, session, auth, timeout):
+    def __init__(self, session, token, timeout):
         """Initialize."""
         self.session = session
-        self.auth = auth
+        self.token = token
         self.timeout = timeout
 
     async def get_json(self, url):
@@ -31,7 +31,13 @@ class CFAPI:
         data = None
         try:
             async with async_timeout.timeout(self.timeout):
-                response = await self.session.get(url, headers=self.auth.header)
+                response = await self.session.get(
+                    url,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.token}",
+                    },
+                )
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
                 f"Timeout error fetching information from {url}, {error}"
@@ -71,7 +77,12 @@ class CFAPI:
         try:
             async with async_timeout.timeout(self.timeout):
                 response = await self.session.put(
-                    url, headers=self.auth.header, data=json_data
+                    url,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.token}",
+                    },
+                    data=json_data,
                 )
         except asyncio.TimeoutError as error:
             raise CloudflareConnectionException(
@@ -99,22 +110,6 @@ class CFAPI:
             _LOGGER.debug(data)
 
         return data
-
-
-class CFAuth:
-    """CF Auth."""
-
-    def __init__(self, token):
-        """Initialize."""
-        self.token = token
-
-    @property
-    def header(self):
-        """Return auth headers."""
-        return {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.token}",
-        }
 
 
 class CFRecord:

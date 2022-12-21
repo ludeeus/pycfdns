@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from typing import Any
-from pycfdns.models import CFAPI, CFAuth, CFRecord, DNSRecord
+from pycfdns.models import CFAPI, CFRecord, DNSRecord
 from pycfdns.const import NAME
 from pycfdns.exceptions import CloudflareException, CloudflareZoneException
 
@@ -17,7 +17,7 @@ class CloudflareUpdater:
 
     def __init__(self, session, token, zone, records=None, timeout=10):
         """Initialize"""
-        self.api = CFAPI(session, CFAuth(token), timeout)
+        self.api = CFAPI(session, token, timeout)
         self.zone = zone
         self.records = records
 

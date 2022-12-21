@@ -23,8 +23,18 @@ class CloudflareUpdater:
         *,
         records: list[str] | None = None,
         timeout: float = 10,
+        **kwargs: Any,
     ) -> None:
-        """Initialize."""
+        """Initialize the CloudflareUpdater object.
+
+        Args:
+            session (ClientSession): An instance of the `aiohttp.ClientSession` class.
+            token (str): The Cloudflare API token.
+            zone (str): The zone name for the Cloudflare DNS records (i.e. example.com).
+
+            records (list[str], optional): A list of record IDs to be updated. If not provided, all records in the zone will be updated.
+            timeout (float, optional): The number of seconds to wait for a response from the Cloudflare API before timing out. Defaults to 10.
+        """
         self.api = CloudflareApiClient(session, token, timeout)
         self.zone = zone
         self.records = records

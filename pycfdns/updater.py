@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 from .client import CloudflareApiClient
 from .exceptions import CloudflareException, CloudflareZoneException
 from .logger import LOGGER
-from .models import CFRecord, DNSRecord
+from .models import CloudflareDNSRecord
 
 
 class CloudflareUpdater:
@@ -90,9 +90,9 @@ class CloudflareUpdater:
 
         return [record["name"] for record in data]
 
-    async def get_record_info(self, zone_id: str) -> list[CFRecord]:
+    async def get_record_info(self, zone_id: str) -> list[CloudflareDNSRecord]:
         """Get the information of the records."""
-        record_information: list[CFRecord] = []
+        record_information: list[CloudflareDNSRecord] = []
         if self.records is None:
             self.records = []
             data = await self.get_zone_records(zone_id)
@@ -115,13 +115,23 @@ class CloudflareUpdater:
                     query={"name": record},
                 )
             )
-            record_information.append(CFRecord(recorddata[0]))
+
+            first_record = recorddata[0]
+            record_information.append(
+                CloudflareDNSRecord(
+                    content=first_record["content"],
+                    id=first_record["id"],
+                    name=first_record["name"],
+                    proxied=first_record["proxied"],
+                    type=first_record["type"],
+                )
+            )
         return record_information
 
     async def update_records(
         self,
         zone_id: str,
-        records: list[CFRecord],
+        records: list[CloudflareDNSRecord],
         content: str,
     ) -> None:
         """Update DNS records."""
@@ -131,40 +141,34 @@ class CloudflareUpdater:
             raise CloudflareException("No content provided, skipping update")
 
         for record in records:
-            if record.record_content == content:
+            if record["content"] == content:
                 LOGGER.debug(
                     "No need to update record (%s) content did not change",
-                    record.record_name,
+                    record["name"],
                 )
                 continue
 
             if (
-                record.record_id is None
-                or record.record_type is None
-                or record.record_name is None
-                or record.record_proxied is None
+                record["id"] is None
+                or record["type"] is None
+                or record["name"] is None
+                or record["proxied"] is None
             ):
                 LOGGER.debug(
                     "Skipping record (%s) as it is not supported by the API",
-                    record.record_name,
+                    record["name"],
                 )
                 continue
 
             result = await self.update_dns_record(
                 zone_id=zone_id,
-                record={
-                    "id": record.record_id,
-                    "type": record.record_type,
-                    "name": record.record_name,
-                    "content": content,
-                    "proxied": record.record_proxied,
-                },
+                record=record,
             )
 
             if result["success"]:
-                success.append(record.record_name)
+                success.append(record["name"])
             else:
-                error.append(record.record_name)
+                error.append(record["name"])
 
             if success:
                 LOGGER.debug("Updated DNS records %s", success)
@@ -175,7 +179,7 @@ class CloudflareUpdater:
         self,
         *,
         zone_id: str,
-        record: DNSRecord,
+        record: CloudflareDNSRecord,
     ) -> dict[str, Any]:
         """Update a DNS record."""
         result: dict[str, Any] = await self.api.put(

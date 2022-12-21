@@ -11,7 +11,6 @@ from .exceptions import (
     CloudflareConnectionException,
     CloudflareException,
 )
-
 from .logger import LOGGER
 
 

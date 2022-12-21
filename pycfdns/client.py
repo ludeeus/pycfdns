@@ -1,6 +1,5 @@
 """Clouflare DNS API client."""
 import asyncio
-from logging import Logger, getLogger
 from socket import gaierror
 from typing import Any
 
@@ -13,7 +12,7 @@ from .exceptions import (
     CloudflareException,
 )
 
-_LOGGER: Logger = getLogger(__name__)
+from .logger import LOGGER
 
 
 class CloudflareApiClient:
@@ -80,7 +79,7 @@ class CloudflareApiClient:
                 )
 
             result: dict[str, Any] = await response.json()
-            _LOGGER.debug(result)
+            LOGGER.debug(result)
 
             if not result.get("success"):
                 for error in result.get("errors", []):

@@ -1,5 +1,6 @@
 """Clouflare DNS API client."""
 import asyncio
+import json
 from socket import gaierror
 from typing import Any
 
@@ -28,21 +29,28 @@ class CloudflareApiClient:
         self.token = token
         self.timeout = timeout
 
-    async def get(self, url: str) -> dict[str, Any]:
+    async def get(
+        self,
+        url: str,
+    ) -> Any:
         """Return JSON response from the API."""
         return await self._do_request(url=url, method="GET")
 
-    async def put(self, url: str, json_data: dict[str, Any]) -> dict[str, Any]:
+    async def put(
+        self,
+        url: str,
+        json_data: dict[str, Any],
+    ) -> Any:
         """PUT JSON on the API."""
-        return await self._do_request(url=url, method="PUT", data=json_data)
+        return await self._do_request(url=url, method="PUT", data=json.dumps(json_data))
 
     async def _do_request(
         self,
         url: str,
         *,
         method: str = "GET",
-        data: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+        data: str | None = None,
+    ) -> Any:
         """Call the Cloudflare API."""
         try:
             async with async_timeout.timeout(self.timeout):
@@ -58,10 +66,6 @@ class CloudflareApiClient:
         except asyncio.TimeoutError as exception:
             raise CloudflareConnectionException(
                 f"Timeout error fetching information from {url}, {exception}"
-            ) from exception
-        except (KeyError, TypeError) as exception:
-            raise CloudflareException(
-                f"Error parsing information from {url}, {exception}"
             ) from exception
         except (ClientError, gaierror) as exception:
             raise CloudflareConnectionException(
@@ -86,4 +90,9 @@ class CloudflareApiClient:
                         f"[{entry.get('code')}] {entry.get('message')}"
                     )
 
-        return result
+        try:
+            return result.get("result")
+        except (KeyError, TypeError) as exception:
+            raise CloudflareException(
+                f"Error parsing information from {url}, {exception}"
+            ) from exception

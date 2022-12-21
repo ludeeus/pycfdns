@@ -19,8 +19,11 @@ jobs:
           python-version: "3.x"
       - name: Install dependencies
         run: |
-          python3 -m pip install setuptools wheel pip black
+          python3 -m pip install setuptools wheel pip black mypy
           python3 setup.py develop
 
       - name: Check formatting
         run: black .
+
+      - name: Check typing
+        run: mypy --strict pycfdns

@@ -1,7 +1,6 @@
 """Cloudflare DNS Updater."""
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from aiohttp import ClientSession
@@ -23,7 +22,7 @@ class CloudflareUpdater:
         *,
         records: list[str] | None = None,
         timeout: float = 10,
-        **kwargs: Any,
+        **_: Any,
     ) -> None:
         """Initialize the CloudflareUpdater object.
 
@@ -32,68 +31,68 @@ class CloudflareUpdater:
             token (str): The Cloudflare API token.
             zone (str): The zone name for the Cloudflare DNS records (i.e. example.com).
 
-            records (list[str], optional): A list of record IDs to be updated. If not provided, all records in the zone will be updated.
-            timeout (float, optional): The number of seconds to wait for a response from the Cloudflare API before timing out. Defaults to 10.
+            records (list[str], optional): A list of record IDs to be updated.
+                If not provided, all records in the zone will be updated.
+            timeout (float, optional): The number of seconds to wait for
+                a response from the Cloudflare API before timing out. Defaults to 10.
         """
         self.api = CloudflareApiClient(session, token, timeout)
         self.zone = zone
         self.records = records
 
-    def _endpoint(self, *, path: str = "", query: dict[str, str] | None = None) -> str:
+    def _endpoint(
+        self,
+        *,
+        path: str = "",
+        query: dict[str, str | None] | None = None,
+    ) -> str:
         """Return the full URL to a endpoint."""
         endpoint = f"https://api.cloudflare.com/client/v4/zones/{path}"
         if query is None:
             return endpoint
-        return f"{endpoint}?{'&'.join(f'{key}={value}' for key, value in query.items() if value is not  None)}"
+        return f"{endpoint}?{'&'.join(f'{k}={v}' for k, v in query.items() if v is not  None)}"
 
-    async def get_zones(self):
+    async def get_zones(self) -> list[str] | None:
         """Get the zones linked to account."""
-        zones = []
-
-        data = await self.api.get(self._endpoint())
-        data = data["result"]
+        data: list[dict[str, str]] | None = await self.api.get(self._endpoint())
 
         if data is None:
             return None
 
-        for zone in data:
-            zones.append(zone["name"])
+        return [zone["name"] for zone in data]
 
-        return zones
-
-    async def get_zone_id(self):
+    async def get_zone_id(self) -> str:
         """Get the zone id for the zone."""
-        zone_id = None
         try:
-            data = await self.api.get(url=self._endpoint(query={"name": self.zone}))
-            zone_id = data["result"][0]["id"]
+            data: list[dict[str, str]] = await self.api.get(
+                url=self._endpoint(query={"name": self.zone})
+            )
+            return data[0]["id"]
         except Exception as error:
             raise CloudflareZoneException("Could not get zone ID") from error
-        return zone_id
 
-    async def get_zone_records(self, zone_id, record_type=None):
+    async def get_zone_records(
+        self,
+        zone_id: str,
+        *,
+        record_type: str | None = None,
+    ) -> list[str] | None:
         """Get the records of a zone."""
-        records = []
-
-        data = await self.api.get(
+        data: list[dict[str, str]] | None = await self.api.get(
             self._endpoint(
                 path=f"{zone_id}/dns_records",
                 query={"per_page": "100", "type": record_type},
             )
         )
-        data = data["result"]
 
         if data is None:
             return None
 
-        for record in data:
-            records.append(record["name"])
+        return [record["name"] for record in data]
 
-        return records
-
-    async def get_record_info(self, zone_id):
+    async def get_record_info(self, zone_id: str) -> list[CFRecord]:
         """Get the information of the records."""
-        record_information = []
+        record_information: list[CFRecord] = []
         if self.records is None:
             self.records = []
             data = await self.get_zone_records(zone_id)
@@ -110,18 +109,21 @@ class CloudflareUpdater:
             if self.zone not in record:
                 record = f"{record}.{self.zone}"
 
-            data = await self.api.get(
+            recorddata: list[dict[str, Any]] = await self.api.get(
                 self._endpoint(
                     path=f"{zone_id}/dns_records",
                     query={"name": record},
                 )
             )
-            if data.get("result") is None:
-                continue
-            record_information.append(CFRecord(data["result"][0]))
+            record_information.append(CFRecord(recorddata[0]))
         return record_information
 
-    async def update_records(self, zone_id, records, content):
+    async def update_records(
+        self,
+        zone_id: str,
+        records: list[CFRecord],
+        content: str,
+    ) -> None:
         """Update DNS records."""
         success, error = [], []
 
@@ -132,6 +134,18 @@ class CloudflareUpdater:
             if record.record_content == content:
                 LOGGER.debug(
                     "No need to update record (%s) content did not change",
+                    record.record_name,
+                )
+                continue
+
+            if (
+                record.record_id is None
+                or record.record_type is None
+                or record.record_name is None
+                or record.record_proxied is None
+            ):
+                LOGGER.debug(
+                    "Skipping record (%s) as it is not supported by the API",
                     record.record_name,
                 )
                 continue
@@ -164,14 +178,13 @@ class CloudflareUpdater:
         record: DNSRecord,
     ) -> dict[str, Any]:
         """Update a DNS record."""
-        return await self.api.put(
-            self._endpoint(path=f"{zone_id}/dns_records/{record['id']}"),
-            json.dumps(
-                {
-                    "type": record["type"],
-                    "name": record["name"],
-                    "content": record["content"],
-                    "proxied": record["proxied"],
-                }
-            ),
+        result: dict[str, Any] = await self.api.put(
+            url=self._endpoint(path=f"{zone_id}/dns_records/{record['id']}"),
+            json_data={
+                "type": record["type"],
+                "name": record["name"],
+                "content": record["content"],
+                "proxied": record["proxied"],
+            },
         )
+        return result

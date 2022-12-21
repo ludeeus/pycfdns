@@ -13,7 +13,8 @@ setuptools.setup(
     long_description=LONG,
     long_description_content_type="text/markdown",
     url="https://github.com/ludeeus/pycfdns",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(include=["pycfdns", "pycfdns.*"]),
+    package_data={"pycfdns": ["py.typed"]},
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

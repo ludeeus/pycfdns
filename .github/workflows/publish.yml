@@ -1,34 +1,32 @@
 name: "Release actions"
 
 on:
-  push:
-    tags:
-      - "*"
+  release:
+    types:
+      - published
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to PyPi
     steps:
-      - uses: actions/checkout@v1
-      - name: Set up Python
-        uses: actions/setup-python@v1
+      - name: Checkout the repository
+        uses: actions/checkout@v4.1.0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4.7.1
         with:
-          python-version: "3.x"
+          python-version-file: 'pyproject.toml'
 
       - name: Install dependencies
-        run: python3 -m pip install setuptools wheel twine
+        run: |
+          python3 -m pip install -U pip setuptools
+          python3 -m pip install poetry
 
       - name: Set version number
-        run: |
-          export version=${{ github.ref }}
-          sed -i "s|0.0.0|${version##*/}|" ./setup.py
-          cat ./setup.py
+        run: poetry version ${{ github.event.release.tag_name }}
 
       - name: Publish to PyPi
+        run: poetry publish --build --no-interaction
         env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          python3 setup.py sdist bdist_wheel
-          twine upload dist/*
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}

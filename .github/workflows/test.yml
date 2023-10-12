@@ -23,7 +23,7 @@ jobs:
           python3 setup.py develop
 
       - name: Check formatting
-        run: black .
+        run: black . --check
 
       - name: Check typing
         run: mypy --strict pycfdns

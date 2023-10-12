@@ -1,98 +1,165 @@
-"""Clouflare DNS API client."""
-import asyncio
-import json
-from socket import gaierror
-from typing import Any
+"""Here lives the Client."""
+from asyncio.exceptions import TimeoutError as AsyncioTimeoutError
+from json import dumps as json_dumps
+from typing import Any as TypingAny
 
-import async_timeout
-from aiohttp import ClientError, ClientSession
-
-from .exceptions import (
-    CloudflareAuthenticationException,
-    CloudflareConnectionException,
-    CloudflareException,
+from aiohttp.client import (
+    ClientSession as AioHttpClientSession,
+    ClientTimeout as AioHttpClientTimeout,
 )
-from .logger import LOGGER
+from aiohttp.client_exceptions import ClientError as AioHttpClientError
+from aiohttp.hdrs import CONTENT_TYPE, AUTHORIZATION
+
+from .exceptions import AuthenticationException, ComunicationException
+from .models import RecordModel, ResponseModel, ZoneModel
 
 
-class CloudflareApiClient:
-    """Class used to call the API."""
+class Client:
+    """This is the main client class."""
 
     def __init__(
         self,
-        session: ClientSession,
-        token: str,
-        timeout: float,
+        *,
+        api_token: str,
+        client_session: AioHttpClientSession,
+        timeout: float | None = None,
+        **kwargs: TypingAny,
     ) -> None:
-        """Initialize."""
-        self.session = session
-        self.token = token
-        self.timeout = timeout
+        """Initialize the Client."""
+        self.client_session = client_session
+        self.timeout = AioHttpClientTimeout(total=timeout or 10)
+        self.api_token = api_token
 
-    async def get(
-        self,
-        url: str,
-    ) -> Any:
-        """Return JSON response from the API."""
-        return await self._do_request(url=url, method="GET")
-
-    async def put(
-        self,
-        url: str,
-        json_data: dict[str, Any],
-    ) -> Any:
-        """PUT JSON on the API."""
-        return await self._do_request(url=url, method="PUT", data=json.dumps(json_data))
-
-    async def _do_request(
+    async def _do_api_request(
         self,
         url: str,
         *,
         method: str = "GET",
         data: str | None = None,
-    ) -> Any:
+        **kwargs: TypingAny,
+    ) -> ResponseModel[TypingAny]:
         """Call the Cloudflare API."""
         try:
-            async with async_timeout.timeout(self.timeout):
-                response = await self.session.request(
-                    method=method,
-                    url=url,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {self.token}",
-                    },
-                    data=data,
-                )
-        except asyncio.TimeoutError as exception:
-            raise CloudflareConnectionException(
+            response = await self.client_session.request(
+                method=method,
+                url=url,
+                timeout=self.timeout,
+                headers={
+                    CONTENT_TYPE: "application/json",
+                    AUTHORIZATION: f"Bearer {self.api_token}",
+                },
+                data=data,
+            )
+        except AsyncioTimeoutError as exception:
+            raise ComunicationException(
                 f"Timeout error fetching information from {url}, {exception}"
             ) from exception
-        except (ClientError, gaierror) as exception:
-            raise CloudflareConnectionException(
+        except (AioHttpClientError, OSError) as exception:
+            raise ComunicationException(
                 f"Error fetching information from {url}, {exception}"
             ) from exception
         except Exception as exception:  # pylint: disable=broad-except
-            raise CloudflareException(
+            raise ComunicationException(
                 f"Something really wrong happend! - {exception}"
             ) from exception
         else:
             if response.status == 403:
-                raise CloudflareAuthenticationException(
-                    "Access forbidden. Please ensure valid API Key is provided"
+                raise AuthenticationException(
+                    f"{response.reason}. Please ensure a valid API Key is provided"
                 )
 
-            result: dict[str, Any] = await response.json()
-            LOGGER.debug(result)
+            result: ResponseModel[TypingAny] = await response.json()
 
             if not result.get("success"):
                 for entry in result.get("errors", []):
-                    raise CloudflareException(
+                    raise ComunicationException(
                         f"[{entry.get('code')}] {entry.get('message')}"
                     )
+        return result
 
-        try:
-            return result.get("result")
-        except (KeyError, TypeError) as exception:
-            raise CloudflareException(
-                f"Error parsing information from {url}, {exception}"
-            ) from exception
+    def _api_url(
+        self,
+        *,
+        endpoint: str = "",
+        query: dict[str, str | None] | None = None,
+        **kwargs: TypingAny,
+    ) -> str:
+        """Return the full URL to a endpoint."""
+        url = f"https://api.cloudflare.com/client/v4{endpoint}"
+        if query is None:
+            return url
+        return (
+            f"{url}?{'&'.join(f'{k}={v}' for k, v in query.items() if v is not  None)}"
+        )
+
+    async def list_zones(self, **kwargs: TypingAny) -> list[ZoneModel]:
+        """
+        Get the zones linked to account.
+
+        https://developers.cloudflare.com/api/operations/zones-get
+        """
+        response: ResponseModel[list[ZoneModel]] = await self._do_api_request(
+            url=self._api_url(endpoint="/zones", query={"per_page": "100"})
+        )
+        return response["result"]
+
+    async def list_dns_records(
+        self,
+        zone_id: str,
+        *,
+        type: str | None = None,
+        name: str | None = None,
+        **kwargs: TypingAny,
+    ) -> list[RecordModel]:
+        """
+        Get the records of a zone.
+
+        https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-list-dns-records
+        """
+        response: ResponseModel[list[RecordModel]] = await self._do_api_request(
+            url=self._api_url(
+                endpoint=f"/zones/{zone_id}/dns_records",
+                query={"per_page": "100", "type": type, "name": name},
+            )
+        )
+        return response["result"]
+
+    async def update_dns_record(
+        self,
+        *,
+        zone_id: str,
+        id: str,
+        type: str,
+        content: str,
+        name: str,
+        comment: str | None = None,
+        proxied: bool | None = None,
+        tags: list[str] | None = None,
+        ttl: int | None = None,
+        **args: dict[str, TypingAny],
+    ) -> RecordModel:
+        """
+        Update a DNS record.
+
+        https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-update-dns-record
+        """
+        response: ResponseModel[RecordModel] = await self._do_api_request(
+            url=self._api_url(endpoint=f"/zones/{zone_id}/dns_records/{id}"),
+            method="PUT",
+            data=json_dumps(
+                {
+                    k: v
+                    for k, v in {
+                        "type": type,
+                        "name": name,
+                        "content": content,
+                        "proxied": proxied,
+                        "comment": comment,
+                        "tags": tags,
+                        "ttl": ttl,
+                    }.items()
+                    if v is not None
+                }
+            ),
+        )
+        return response["result"]

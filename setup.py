@@ -5,11 +5,12 @@ with open("README.md", "r") as fh:
     LONG = fh.read()
 setuptools.setup(
     name="pycfdns",
-    version="master",
+    version="0.0.0",
     author="Joakim Sorensen",
     author_email="hi@ludeeus.dev",
-    description="Update Cloudflare DNS records.",
-    install_requires=["aiohttp>=3.6.1,<4.0"],
+    description="Cloudflare DNS API Python Wrapper.",
+    install_requires=["aiohttp>=3.8.6,<4.0"],
+    python_requires=">=3.11",
     long_description=LONG,
     long_description_content_type="text/markdown",
     url="https://github.com/ludeeus/pycfdns",

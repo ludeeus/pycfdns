@@ -1,2 +1,3 @@
 *egg*
 __pycache__
+.mypy_cache

@@ -1,17 +1,9 @@
 """pycfdns exceptions."""
 
 
-class CloudflareException(Exception):
-    """Base exception class for pycfdns."""
-
-
-class CloudflareAuthenticationException(CloudflareException):
+class AuthenticationException(Exception):
     """Error to indicate we cannot authenticate against API."""
 
 
-class CloudflareConnectionException(CloudflareException):
+class ComunicationException(Exception):
     """Error to indicate we cannot connect to API."""
-
-
-class CloudflareZoneException(CloudflareException):
-    """Error to indicate we cannot find zone via API."""

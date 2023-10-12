@@ -1,6 +1,6 @@
 {
 	"name": "pycfdns",
-	"image": "mcr.microsoft.com/devcontainers/python:3.10-bullseye",
+	"image": "mcr.microsoft.com/devcontainers/python:3.11",
 	"postCreateCommand": "pip install -e .",
 	"remoteUser": "vscode"
 }

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  lint:
+    name: Lint with Python ${{ matrix.python.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+          - version: "3.11"
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4.1.0
+
+      - name: Setup Python ${{ matrix.python.version }}
+        uses: actions/setup-python@v4.7.1
+        with:
+          python-version: ${{ matrix.python.version }}
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install -U pip setuptools
+          python3 -m pip install poetry
+          poetry install
+
+      - name: Run black
+        run: poetry run black pycfdns --check
+
+      - name: Run mypy
+        run: poetry run mypy --strict pycfdns

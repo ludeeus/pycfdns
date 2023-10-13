@@ -19,6 +19,7 @@ class _ResultInfo(TypedDict):
     page: int
     per_page: int
     total_count: int
+    total_pages: int
 
 
 class _Owner(_IdName):

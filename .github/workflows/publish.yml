@@ -5,10 +5,18 @@ on:
     types:
       - published
 
+permissions: {}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to PyPi
+    environment:
+      name: release
+      url: https://pypi.org/project/pycfdns
+    permissions:
+      # Used to authenticate to PyPI via OIDC.
+      id-token: write
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4.1.0
@@ -27,7 +35,8 @@ jobs:
       - name: Set version number
         run: poetry version ${{ github.event.release.tag_name }}
 
+      - name: Build
+        run: poetry build --no-interaction
+
       - name: Publish to PyPi
-        run: poetry publish --build --no-interaction
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        uses: pypa/gh-action-pypi-publish@v1.8.10

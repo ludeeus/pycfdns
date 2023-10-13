@@ -127,6 +127,8 @@ This package is published to [PyPI] when a new [GitHub] release is made.
 
 The publishing itself is handled in [GitHub actions] with [this workflow][release_workflow].
 
+[A history of release actions can be found here][release_history].
+
 There is no fixed schedule for when a new version is published.
 
 
@@ -146,6 +148,7 @@ _This Python wrapper for the Cloudflare API is an independent project and is not
 [GitHub actions]: https://github.com/features/actions
 
 [release_workflow]: https://github.com/ludeeus/pycfdns/blob/main/.github/workflows/publish.yml
+[release_history]: https://github.com/ludeeus/pycfdns/actions/workflows/publish.yml
 
 [Client]: https://github.com/search?q=repo%3Aludeeus%2Fpycfdns+symbol%3AClient+path%3Apycfdns%2Fclient.py&type=code
 [list_zones_method]: https://github.com/search?q=repo%3Aludeeus%2Fpycfdns+symbol%3Alist_zones+path%3Apycfdns%2Fclient.py&type=code

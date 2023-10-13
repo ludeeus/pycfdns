@@ -90,19 +90,19 @@ This method accepts the folowing arguments:
 Argument | Type| Description
 --|--|--
 `zone_id` | `str` | The ID of the zone the record exist in.
-`id` | `str` | The ID of the record to list records for.
-`name` | `str` | The name of the record.
-`type` | `str` | The type of the record.
-`content` | `str` | The content of the record.
-`comment` | `str \| None` | The comment of the record.
-`proxied` | `bool \| None` | The proxied state of the record.
-`tags` | `list[str] \| None` | The tags of the record.
-`ttl` | `int \| None` | The TTL value of the record.
+`record_id` | `str` | The ID of the record to list records for.
+`record_name` | `str` | The name of the record.
+`record_type` | `str` | The type of the record.
+`record_content` | `str` | The content of the record.
+`record_comment` | `str \| None` | The comment of the record.
+`record_proxied` | `bool \| None` | The proxied state of the record.
+`record_tags` | `list[str] \| None` | The tags of the record.
+`record_ttl` | `int \| None` | The TTL value of the record.
 
 ```python
 ...
 client = Client(api_token="abc123", client_session=client_session)
-record = await client.update_dns_record(zone_id="abc123", id="abc123", name="abc", content="1.1.1.1", type="A")
+record = await client.update_dns_record(zone_id="abc123", record_id="abc123", record_name="abc", record_content="1.1.1.1", record_type="A")
 ...
 ```
 

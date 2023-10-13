@@ -146,14 +146,14 @@ class Client:
         self,
         *,
         zone_id: str,
-        id: str,
-        type: str,
-        content: str,
-        name: str,
-        comment: str | None = None,
-        proxied: bool | None = None,
-        tags: list[str] | None = None,
-        ttl: int | None = None,
+        record_id: str,
+        record_type: str,
+        record_content: str,
+        record_name: str,
+        record_comment: str | None = None,
+        record_proxied: bool | None = None,
+        record_tags: list[str] | None = None,
+        record_ttl: int | None = None,
         **_: dict[str, TypingAny],
     ) -> RecordModel:
         """
@@ -162,19 +162,19 @@ class Client:
         https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-update-dns-record
         """
         response: ResponseModel[RecordModel] = await self._do_api_request(
-            url=self._api_url(endpoint=f"/zones/{zone_id}/dns_records/{id}"),
+            url=self._api_url(endpoint=f"/zones/{zone_id}/dns_records/{record_id}"),
             method="PUT",
             data=json_dumps(
                 {
                     k: v
                     for k, v in {
-                        "type": type,
-                        "name": name,
-                        "content": content,
-                        "proxied": proxied,
-                        "comment": comment,
-                        "tags": tags,
-                        "ttl": ttl,
+                        "type": record_type,
+                        "name": record_name,
+                        "content": record_content,
+                        "proxied": record_proxied,
+                        "comment": record_comment,
+                        "tags": record_tags,
+                        "ttl": record_ttl,
                     }.items()
                     if v is not None
                 }

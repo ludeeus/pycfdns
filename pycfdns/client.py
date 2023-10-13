@@ -1,5 +1,5 @@
 """Here lives the Client."""
-from asyncio.exceptions import TimeoutError as AsyncioTimeoutError
+from asyncio import gather as AsyncioGather, TimeoutError as AsyncioTimeoutError
 from json import dumps as json_dumps
 from typing import Any as TypingAny
 
@@ -95,10 +95,20 @@ class Client:
 
         https://developers.cloudflare.com/api/operations/zones-get
         """
-        response: ResponseModel[list[ZoneModel]] = await self._do_api_request(
-            url=self._api_url(endpoint="/zones", query={"per_page": "100"})
-        )
-        return response["result"]
+
+        async def _list(page: int = 1) -> ResponseModel[list[ZoneModel]]:
+            return await self._do_api_request(
+                url=self._api_url(endpoint="/zones", query={"per_page": "100", "page": f"{page}"})
+            )
+
+        response = await _list()
+        [zones, result_info] = response["result"], response["result_info"]
+        if (total_pages := result_info["total_pages"]) == 1:
+            return zones
+
+        for response in await AsyncioGather(*[_list(page) for page in range(2, (total_pages + 1))]):
+            zones.extend(response["result"])
+        return zones
 
     async def list_dns_records(
         self,
@@ -113,13 +123,24 @@ class Client:
 
         https://developers.cloudflare.com/api/operations/dns-records-for-a-zone-list-dns-records
         """
-        response: ResponseModel[list[RecordModel]] = await self._do_api_request(
-            url=self._api_url(
-                endpoint=f"/zones/{zone_id}/dns_records",
-                query={"per_page": "100", "type": type, "name": name},
+
+        async def _list(page: int = 1) -> ResponseModel[list[RecordModel]]:
+            return await self._do_api_request(
+                url=self._api_url(
+                    endpoint=f"/zones/{zone_id}/dns_records",
+                    query={"per_page": "100", "page": f"{page}", "type": type, "name": name},
+                )
             )
-        )
-        return response["result"]
+
+        response = await _list()
+        [records, result_info] = response["result"], response["result_info"]
+        if (total_pages := result_info["total_pages"]) == 1:
+            return records
+
+        for response in await AsyncioGather(*[_list(page) for page in range(2, (total_pages + 1))]):
+            records.extend(response["result"])
+
+        return records
 
     async def update_dns_record(
         self,

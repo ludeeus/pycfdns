@@ -1,4 +1,5 @@
 """pycfdns models."""
+
 from typing import Generic, TypedDict, TypeVar
 
 T = TypeVar("T")

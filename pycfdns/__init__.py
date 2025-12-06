@@ -1,4 +1,5 @@
 """Cloudflare DNS API Python Wrapper."""
+
 from .client import Client
 from .exceptions import AuthenticationException, ComunicationException
 from .models import RecordModel, ResponseModel, ZoneModel

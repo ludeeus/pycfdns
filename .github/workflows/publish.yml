@@ -19,7 +19,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4.1.0
+        uses: actions/checkout@v4.3.1
 
       - name: Setup Python
         uses: actions/setup-python@v4.7.1

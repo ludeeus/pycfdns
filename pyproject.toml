@@ -28,7 +28,7 @@ aiohttp = "^3.8"
 [tool.poetry.dev-dependencies]
 black = "^26.0.0"
 isort = "^7.0.0"
-mypy = "^1.6"
+mypy = "^2.0.0"
 pylint = "^4.0.0"
 
 [tool.black]
